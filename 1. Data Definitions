@@ -1,0 +1,173 @@
+@AbapCatalog.viewEnhancementCategory: [#NONE]
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'connection view'
+@Metadata.ignorePropagatedAnnotations: true
+@ObjectModel.usageType:{
+    serviceQuality: #X,
+    sizeCategory: #S,
+    dataClass: #MIXED
+}
+@UI.headerInfo: {
+    typeName: 'connection',
+    typeNamePlural: 'connections'
+
+}
+@Search.searchable: true
+define view entity ZI_CONNECTION_01
+  as select from /dmo/connection as connection
+  association [1..*] to ZI_FLIGHT_ABHI_R  as _flight  on  $projection.CarrierId    = _flight.CarrierId
+                                                      and $projection.ConnectionId = _flight.ConnectionId
+
+  association [1]    to ZI_CARRIER_ABHI_R as _airline on  $projection.CarrierId = _airline.CarrierId
+{
+      @UI.facet: [
+                   {
+                    id:'Connection',
+                    purpose: #STANDARD,
+                    type: #IDENTIFICATION_REFERENCE,
+                    position: 10,
+                    label : 'Connection details' },
+
+                    { id:'Flight',
+                    purpose: #STANDARD,
+                    type: #LINEITEM_REFERENCE,
+                    position: 20,
+                    label : 'Flights details',
+                    targetElement: '_flight' }
+
+                    ]
+
+
+      @UI.lineItem: [{ position: 10,label : 'Airline' }]
+      @UI.identification: [{ position: 10 }]
+      @ObjectModel.text.element: [ '_airline' ]
+      @Search.defaultSearchElement: true
+  key carrier_id      as CarrierId,
+
+      @UI.lineItem: [{ position: 20 }]
+      @UI.identification: [{ position: 20 }]
+      @Search.defaultSearchElement: true
+  key connection_id   as ConnectionId,
+      @UI.selectionField: [{ position:  10 }]
+      @UI.lineItem: [{ position: 30 ,label : 'Departure ID'}]
+      @UI.identification: [{ position: 30,label : 'Departure ID' }]
+      @Consumption.valueHelpDefinition: [{ entity: {
+          name: 'ZI_AIRPORT_ABHI_R',
+          element: 'AirportId'
+      }  }]
+      airport_from_id as AirportFromId,
+      @UI.selectionField: [{ position:  20 }]
+      @UI.lineItem: [{ position: 40 }]
+      @UI.identification: [{ position: 40 }]
+      @Consumption.valueHelpDefinition: [{ entity: {
+         name: 'ZI_AIRPORT_ABHI_R',
+         element: 'AirportId'
+      }  }]
+
+      @EndUserText.label: 'Destination Airport IDD'
+      airport_to_id   as AirportToId,
+      @UI.lineItem: [{ position: 50 , label :'DepartureTime'}]
+      @UI.identification: [{ position: 50 }]
+      departure_time  as DepartureTime,
+      @UI.lineItem: [{ position: 60 , label:'ArrivalTime'}]
+      @UI.identification: [{ position: 60 }]
+      arrival_time    as ArrivalTime,
+      @Semantics.quantity.unitOfMeasure: 'DistanceUnit'
+      @UI.identification: [{ position: 70 }]
+      distance        as Distance,
+      @UI.identification: [{ position: 80 }]
+      distance_unit   as DistanceUnit,
+
+      //Association
+      @Search.defaultSearchElement: true
+      _flight,
+      @Search.defaultSearchElement: true
+      _airline
+}
+---------------------------------------------------------------------------------------------------
+@AbapCatalog.viewEnhancementCategory: [#NONE]
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Carrier deatils'
+@Metadata.ignorePropagatedAnnotations: true
+@ObjectModel.usageType:{
+    serviceQuality: #X,
+    sizeCategory: #S,
+    dataClass: #MIXED
+}
+@Search.searchable: true
+define view entity ZI_CARRIER_ABHI_R
+  as select from /dmo/carrier
+{
+  key carrier_id    as CarrierId,
+      @Semantics.text: true
+      @Search.defaultSearchElement: true
+      @Search.fuzzinessThreshold: 0.8
+      name          as Name,
+      currency_code as CurrencyCode
+
+}
+---------------------------------------------------------------------------------------------------
+@AbapCatalog.viewEnhancementCategory: [#NONE]
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Flight Information'
+@Metadata.ignorePropagatedAnnotations: true
+@ObjectModel.usageType:{
+    serviceQuality: #X,
+    sizeCategory: #S,
+    dataClass: #MIXED
+}
+@Search.searchable: true
+define view entity ZI_FLIGHT_ABHI_R as select from /dmo/flight
+
+ association [1] to ZI_CARRIER_ABHI_R as _airline
+ on $projection.CarrierId = _airline.CarrierId
+{
+    @UI.lineItem: [{ position:10  }]
+    @ObjectModel.text.association: '_airline'
+    key carrier_id as CarrierId,
+    @UI.lineItem: [{ position:20  }]
+    key connection_id as ConnectionId,
+    @UI.lineItem: [{ position:30  }]
+    key flight_date as FlightDate,
+    @UI.lineItem: [{ position:40  }]
+    @Semantics.amount.currencyCode: 'Currencycode'
+    price as Price,
+    @UI.lineItem: [{ position:50  }]
+    currency_code as CurrencyCode,
+    @UI.lineItem: [{ position:60  }]
+    
+    @Search.defaultSearchElement: true
+    @Search.fuzzinessThreshold: 0.8
+    plane_type_id as PlaneTypeId,
+    @UI.lineItem: [{ position:70  }]
+    seats_max as SeatsMax,
+    @UI.lineItem: [{ position:80  }]
+    seats_occupied as SeatsOccupied,
+    
+    _airline
+}
+--------------------------------------------------------------------------------------------------------
+@AbapCatalog.viewEnhancementCategory: [#NONE]
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Airport details'
+@Metadata.ignorePropagatedAnnotations: true
+@ObjectModel.usageType:{
+    serviceQuality: #X,
+    sizeCategory: #S,
+    dataClass: #MIXED
+}
+@Search.searchable: true
+define view entity ZI_AIRPORT_ABHI_R
+  as select from /dmo/airport
+{
+  @Search.defaultSearchElement: true
+  key airport_id as AirportId,
+      @Search.defaultSearchElement: true
+      name       as Name,
+      @Search.defaultSearchElement: true
+      @Search.fuzzinessThreshold: 0.7
+      city       as City,
+      @Search.defaultSearchElement: true
+      country    as Country
+}
+
